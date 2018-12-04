@@ -256,7 +256,32 @@ var tests = [
     boundary: '----WebKitFormBoundaryTB2MiQ36fnSJlrhY',
     expected: [],
     what: 'empty form'
-  }
+  },
+	{ source: [
+			['-----------------------------paZqsnEHRufoShdX6fh0lUhXBP4k',
+			 'Content-Disposition: form-data; name="file_name_0"',
+			 '',
+			 'super alpha file',
+			 '-----------------------------paZqsnEHRufoShdX6fh0lUhXBP4k',
+			 'Content-Disposition: form-data; name="upload_file_0"; filename="1k_a.dat"',
+			 'Content-Type: application/octet-stream',
+			 '',
+			 'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
+			 '-----------------------------paZqsnEHRufoShdX6fh0lUhXBP4k--'
+			].join('\r\n')
+		],
+		boundary: '---------------------------paZqsnEHRufoShdX6fh0lUhXBP4k',
+		limits: {
+			fileSize: 13,
+			fieldSize: 5
+		},
+		newFileSizeLimit: 3,
+		expected: [
+			['field', 'file_name_0', 'super', false, true, '7bit', 'text/plain'],
+			['file', 'upload_file_0', 3, 2, '1k_a.dat', '7bit', 'application/octet-stream']
+		],
+		what: 'Fields and files (limits) - when changing limit dynamically'
+	},
 ];
 
 function next() {
@@ -274,6 +299,10 @@ function next() {
       }),
       finishes = 0,
       results = [];
+
+	if (v.newFileSizeLimit) {
+		busboy.setFileSizeLimit(v.newFileSizeLimit);
+	}
 
   if (v.events === undefined || v.events.indexOf('field') > -1) {
     busboy.on('field', function(key, val, keyTrunc, valTrunc, encoding, contype) {
